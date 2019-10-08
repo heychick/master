@@ -1,0 +1,23 @@
+#!/bin/bash
+#install_nginx(){
+id nginx &>/dev/null
+if [ $? -ne 0 ];then
+        useradd -s /sbin/nologin nginx
+        echo "创建用户成功"
+fi
+
+cd /root/lnmp_soft
+ls -ld nginx-1.10.3.tar.gz
+if [ $? -eq 0 ];then
+        tar -xf nginx-1.10.3.tar.gz -C /
+        echo "###########安装yum源开始#################################"
+yum -y install gcc pcre-devel openssl-devel >/dev/null  &&  echo "yum安装成功" ||echo "yum安装失败"
+        sleep 5
+        echo "###########安装yum源结束#################################"
+        cd /nginx-1.10.3
+        ./configure --prefix=/usr/local/nginx --user=nginx --group=nginx --with-http_ssl_module
+        make && make install
+/usr/local/nginx/sbin/nginx && echo "nginx启动成功" || "nginx启动失败"
+else
+        echo "没有源码包"
+fi  

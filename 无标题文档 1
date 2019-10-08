@@ -1,0 +1,27 @@
+#!/bin/bash
+conf=/usr/local/nginx/conf/nginx.conf
+echo '###################第一步安装开始###################################'
+yum -y install gcc pcre-devel openssl-devel >/dev/null && echo '第一步安装成功' || echo '第一步安装失败'
+cd /root/lnmp_soft 
+tar -zxf nginx-1.12.2.tar.gz
+cd nginx-1.12.2
+./configure --with-http_ssl_module --with-stream --with-http_stub_status_module >/dev/null  && make >/dev/null && make install >/dev/null && echo '安装源码包nginx成功' ||echo '安装源码包nginx失败'
+
+echo '###################第一步安装结束###################################'
+
+
+echo '###################第二步安装相关lnmp软件###################################'
+yum -y install mariadb mariadb-server mariadb-devel >/dev/null && echo 'mariadb安装成功' || echo 'mariadb安装失败'
+yum -y install php php-fpm php-mysql  >/dev/null && echo 'php安装成功' || echo 'php安装失败'
+sed -i '65,71s/#//' $conf
+sed -i '/SCRIPT_FILENAME/d'    $conf
+sed -i '/fastcgi_params/s/fastcgi_params/fastcgi.conf/' $conf
+echo '###################第三步启动软件###################################'
+systemctl restart mariadb  && echo "启动成功mariadb"  || echo "启动失败mariadb"
+systemctl restart php-fpm  && echo "启动成功php-fpm"  || echo "启动失败php-fpm"
+/usr/local/nginx/sbin/nginx && echo "启动成功nginx"  || echo "启动失败nginx"
+
+echo "<?php " >/usr/local/nginx/html/test.php
+echo "\$i=web1; " >>/usr/local/nginx/html/test.php
+echo "echo \$i;" >>/usr/local/nginx/html/test.php
+echo "?> " >>/usr/local/nginx/html/test                                                                                                                                                                                                                                                                                                                                                        .php

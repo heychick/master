@@ -1,0 +1,41 @@
+#!/bin/bash
+aa=` netstat -atulp |grep nginx`
+case $1 in
+start)
+/usr/local/nginx/sbin/nginx
+echo "启动成功 $aa" ;;
+stop)
+/usr/local/nginx/sbin/nginx -s stop
+echo "暂停成功 $aa" ;;
+reset)
+/usr/local/nginx/sbin/nginx -s stop
+/usr/local/nginx/sbin/nginx
+echo "重启成功"
+echo $aa ;;
+reload)
+/usr/local/nginx/sbin/nginx -s reload && echo "重新加载配置文件成功" ||echo "加载失败";;
+v)
+/usr/local/nginx/sbin/nginx -V ;;
+status)
+netstat -atulp |grep nginx
+if [ $? -eq 0 ];then
+        echo "进程正在运行"
+else
+        echo "进程停止未运行"
+fi;;
+*)
+echo "start|stop|reset|reload|status|v"
+#echo help;;  
+esac
+##################################################################
+help(){
+echo " Usage: rht-vmctl  VMCMD   VMNAME  
+  where VMCMD is one of:
+    start      - obtain and start up VMNAME
+    stop       - stop a running VMNAME
+    reset     - display libvirt status of VMNAME 
+    V         - ****    
+    reload   -reload   "
+}
+##################################################################
+

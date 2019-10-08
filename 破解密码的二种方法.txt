@@ -1,0 +1,50 @@
+LINUX7版本破解密码：
+重启电脑，进入grub2引导界面时，按e键进入编辑状态
+找到linux16所在的行，在这一行的末尾输入rd.break console=tty0，然后按ctrl+x快捷键进入救援模式
+在命令行输入：
+mount -o remount,rw /sysroot         #以读写的方式挂载
+chroot /sysroot                      #切换根目录
+passwd root                          #修改密码
+连续输入两次密码
+touch /.autorelabel                  #重置安全标签  让selinux 自动作初始化 
+exit                                 #退出
+reboot                               #重启
+
+
+
+另一种方法:
+touch  /.autorelabel     
+
+下次重启系统时，它会自动重新标记SElinux的文件系统。这通常在首次为SELinux标记文件系统时，或者在不同类型的策略之间切换时发生，例如从目标策略更改为严格策略。
+自动创建卷标会花费很长时间,是一种懒人选择,可以用另外2个命令代替,同时也可以减少开机时间.
+
+
+load_policy  -i                       #加载SELinux策略 
+
+chcon  -t  shadow_t   /etc/shadow     #在 /etc/shadow 中设置上下文类型
+
+
+
+名词解释:
+grub:  是一个来自GNU项目的启动引导程序。GRUB是多启动规范的实现，它允许用户可以在计算机内同时拥有多个操作系统，并在计算机启动时选择希望运行的操作系统。GRUB可用于选择操作系统分区上的不同内核，也可用于向这些内核传递启动参数。
+grub2: grub2是版本号在1.98之后的grub；grub一般指grub legacy，版本号为0.97。
+console:控制台  /dev/console
+tty0:在Linux 系统中，计算机显示器通常被称为控制台终端(Console）。它仿真了类型为Linux的一种终端(TERM=Linux），并且有一些设备特殊文件与之相关联：tty0、tty1、tty2 等。当你在控制台上登录时，使用的是tty1。tty0表示当前使用的虚拟终端.
+echo  "hello"  > /dev/tty   
+
+
+wc  -c   文件路径               #显示bytes数
+wc  -l   文件路径               #显示行数 
+wc  -w   文件路径               #显示字数
+
+
+
+
+
+
+
+
+
+
+
+

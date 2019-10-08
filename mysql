@@ -1,0 +1,313 @@
+panglj@tedu.cn
+Day01
+>>
+	配置文件		/etc/my.cnf
+	数据存放路径	/var/lib/mysql 
+	默认端口 		3306
+	进程名		mysqld
+	传输协议  	TCP
+	进程所有者 	mysql
+	进程所属者 	mysql
+	错误日志文件	/var/log/mysqld.log
+扩展:
+	/var/lib/mysql/库名/表名
+	user.frm  表头信息
+	user.ibd  数据信息
+>>
+>>
+>>>首次登录密码在安装软件时随机生产
+>>>随机密码存在日志文件/var/log/mysql.log
+查看随机密码 grep 'password' /var/log/mysqld.log
+>>>
+>>>mysql -h 数据库地址 -u用户 -p密码
+>>>
+>>>#####修改root密码
+>>>
+		alter user root@"localhost" identified by "密码";		
+		mysql -hlocalhost -uroot -p密码
+>>>
+>>>#####修改密码策略
+	0 or LOW 			长度
+	1 or MEDIUM(默认) 	长度,数字,小写/大写,和特殊字符
+	2 or STRONG  		长度,数字,小写/大写和特殊字符;字典文件
+	show variables like "%password%"; //查看变量
+	set global validate_password_policy=0;//修改密码策略
+	set global validate_password_length=6;//修改密码长度
+	##永久配置
+	vim /etc/my.cnf
+		validate_password_policy=0
+		validate_password_length=6
+>>>
+>>####sql分类
+		DDL(定义) create alter frop	
+		DML(操作) insert update delete
+		DCL(控制) grant  revoke
+		DTL(事物) commit rollback savepoint
+>>>
+>>库管理命令
+>>>
+		show databases;			//显示已有的库
+		select user();			//显示连接用户
+		select database();		//显示当前所在的库
+		use 库名;				//切换库
+		show tables;			//显示已有的表	
+		create database 库名;	//创建新库
+		drop database 库名;		//删除库
+>>>
+>>表管理命令
+>>>
+		create table 库名.表名 (
+		字段名1 类型,
+		字段名2 类型)
+		default charset=utf8;
+		//指定中文字符集
+		##永久配置
+		vim /etc/my.cnf
+		character_set_server=utf8
+		show variables like 'charac%';
+>>>
+>>>
+>>字符类型
+>>>
+	
+		定长char
+			最大字符数255
+		变长varchar
+			按数据实际大小分配存储空间
+		varvhar 1--65532
+		大文本类型:text/blob
+		字符数大于65535存储时使用
+>>
+>>数值类型
+>>>
+		#整数型
+		类型				名称						有符号范围		无符号范围
+		tinyint  	微小整数					-128~127		0~255
+		smalint		小整数					-32768~32767  0~65535
+		mediumint 中整型
+		int				大整型
+		bigint		极大整型
+		unsigned  使用无符号存储范围
+		#浮点型
+		float     单精度
+		double		双精度
+
+>>>
+>>日期类型
+>>>
+		datetime
+		1000-01-01 00:00:00~9999-12-31 23:59:59
+		timestamp
+		1970-01-01 00:00:00~2038-01-19 00:00:00
+		日期 date 		yyyymmdd
+		年 	year		yyyy
+		时间	time		HH:MM:SS
+>>>
+>>枚举类型
+>>>
+		enum 单选
+		set  多选
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+
