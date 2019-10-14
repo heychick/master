@@ -1,0 +1,128 @@
+>>>
+		什么是binlog日志
+		mysql服务日志的一种
+		记录查询之外的所有sql命令
+>>>
+		vim /etc/my.cnf
+		log_bin
+		server_id=50
+		#查看日志
+		show master status;
+		show master logs;
+		#启用日志
+		ll /var/lib/mysql/主机名-bin*
+		/var/lib/mysql/mysql1-bin.index   		#索引文件
+		1.修改日志文件路径
+		vim /etc/my.cnf
+		log_bin=/log/zhj
+		server_id=50	
+		max_binlog_size=数值m ---指定日志文件容量,默认1G	
+		mkdir /log
+		chown mysql /log
+		2.手动生成新的日志文件
+		mysqldump -uroot -p1qaz@WSX --flush-logs db5 >/root/db5.sql
+		flush logs;  或  mysql -uroot -p1qaz@WSX -e "flush logs"
+		systemcrl restart nysqld 重启进程也会重新创建日志
+		3.删除已有的日志文件
+		purge master logs to "zhj.000004";  删除指定编号之前的binlog日志文件
+		reset master; 重置日志文件
+>>###恢复数据	
+>>>
+		使用日志恢复数据
+		#mysqlbinlog 日志文件 | mysql -uroot -p1qaz@WSX
+>>>		
+		mysqldump -uroot -p1qaz@WSX db3 > /root/db3.sql
+		mysql -uroot -p2wsx#EDC  db3 < /root/db3.sql
+		mysqlbinlog zhj.000007 |mysql -uroot -p2wsx#EDC
+>>>分析日志
+>>>
+		show variables like "binlog_format";
+		/etc/my.cnf"
+>>>		
+		mysqlbinlog 选项 binlog日志文件名 | mysql -uroot -p密码
+		|选项|用户|
+		|--|--|
+		|start-datetime="yyyy-mm-dd hh:mm:ss"|起始时间
+		|stop-datetime="yyyy-mm-dd hh:mm:ss"|结束时间		
+		|start-position=数字|起始偏移量
+		|stop-position=数字|结束偏移量	
+		PS:偏移量	
+		mysqlbinlog --start-position=296  --stop-position=1121 /root/zhj.000008 |mysql -uroot -p2wsx#EDC
+		mysql -uroot -p2wsx#EDC -e "select * from db3.ceshi;"
+		PS:时间
+		mysqlbinlog --start-datetime='2019-10-14  11:50:57' --stop-datetime='2019-10-14 11:53:55' zhj.000008 |mysql -uroot -p2wsx#EDC
+>>>
+------
+>>>innobackupex	
+>>>
+		1.安装percona软件
+		2.完全备份与恢复
+		3.在完全备份恢复单张表数据
+		4.增量备份与恢复 
+>>>
+		2-1完全备份
+		常用选项 |含义
+		--		|--
+		--host|主机名
+		--user|用户名
+		--port|端口号
+		--password|密码
+		--databases|数据名
+		--no-timestamp|不用日期命名备份文件存储的子目录名
+		ps:
+			databases="库名"
+			databases="库名1 库名2"
+			databases="库名.表"
+>>>
+>>>			
+		###完全备份操作	
+		innobackupex --user root --password 1qaz@WSX /allbak  --no-timestamp
+		###完全恢复操作
+		system stop mysqld 
+		rm -rf /var/lib/mysql/*
+		innobackupex --apply-log /root/allbak/ #准备恢复数据
+		innobackupex --copy-back /root/allbak/ #恢复数据
+		chown -R mysql:mysql /var/lib/mysql/
+		systemctl restart mysqld
+		mysql -uroot -p1qaz@WSX
+		PS:可以查询准备恢复数据-->恢复数据状态
+		cat /root/allbak/xtrabackup_checkpoints 
+		backup_type = full-prepared
+>>>
+>>>
+		###恢复单张表信息
+		1.删除表空间
+			mysql>alter table db5.discard b tablespace;
+		2.导出表信息
+			innobackupex --apply-log --export /root/allbak/
+		3.拷贝表信息文件到数据库目录下
+			cp /root/allbak/db5/b.{cfg,ibd,exp} /var/lib/mysql/db5/
+		4.修改表信息文件的所有者及组用户
+			chown mysql:mysql /var/lib/mysql/db5/b.*
+		5.导入表空间
+			mysql>alter table db5.b import tablespace;
+		6.删除数据库目录下的表信息文件
+			rm -rf /var/lib/mysql/db5/b.{cfg,exp}
+>>>	
+>>>
+>>>
+>>>
+>>>
+>>>	
+>>>
+>>>
+>>>
+>>>
+>>>	
+>>>
+>>>
+>>>
+>>>	
+>>>
+>>>
+>>>
+>>>	
+>>>
+>>>
+>>>
+>>>
