@@ -334,10 +334,13 @@ unsigned|	使用无符号存储范围
 		2.跳过授权表启动mysql服务程序
 		3.修改root密码
 			update mysql.user set authentication_string=password("7ujm*IK<") where user="root";
+			flush privileges;
 		4.以正常方式重启mysql服务程序
 >>>
 >>物理备份及恢复
 >>>
+		物理备份 cp、tar
+		逻辑备份mysqldump(备份)，mysql(恢复)
 		备份操作
 		#!/bin/bash
 		ssh root@192.168.4.51 systemctl stop mysqld
@@ -348,26 +351,44 @@ unsigned|	使用无符号存储范围
 >>数据备份策略
 >>>
 		完全备份:备份所有数据
-		增量备份
+		增量备份：备份上次备份后，所产生的数据
 		差异备份:备份完全备份后,所有新产生的数据
-		mysqldump -uroot -p
+>>>
+		完全备份及恢复
+		mysqldump -uroot -p密码 库名>/目录
+		完全恢复
+		mysql -u -p 库名<目录
+>>>
 >>>
 ------------------------
 ###Day05
 >>>
-		什么是binlog日志
+		什么是binlog日志？
+		也称作二进制日志
 		mysql服务日志的一种
 		记录查询之外的所有sql命令
 >>>
 		vim /etc/my.cnf
-		log_bin
-		server_id=50
+		log_bin					#启用binlog日志	
+		server_id=50           #指定值1~255
 		#查看日志
 		show master status;
 		show master logs;
 		#启用日志
 		ll /var/lib/mysql/主机名-bin*
-		/var/lib/mysql/mysql1-bin.index   		#索引文件
+		/var/lib/mysql/mysql1-bin.index   
+		#分析日志
+		show varialbes like 'binlog_format';
+		三种记录方式：
+			1.statement 报表模式
+			2.row 行模式
+			3.mixed 混合模式
+		
+>>>
+>>>
+>>>
+>>>		
+		#索引文件
 		1.修改日志文件路径
 		vim /etc/my.cnf
 		log_bin=/log/zhj
@@ -507,30 +528,37 @@ unsigned|	使用无符号存储范围
 			mysqldump -uroot -p1qaz@WSX --master-data db5 >/root/db5.sql
 			scp /root/db5.sql root@192.168.4.52:/root/
 			grep master51 /root/db5.sql 
-
-			change master to master_host="192.168.4.51",master_user="repluser",master_password="1qaz@WSX" ,master_log_file="master51.000001",master_log_pos=441;	
+>>>			
+			change master to 	master_host="192.168.4.51",
+			master_user="repluser",master_password="1qaz@WSX" ,
+			master_log_file="master51.000001",master_log_pos=441;
+>>>			
 			master信息会自动保存到/var/lib/mysql/master.info文件
 			若更改主库信息时, 应先执行stop slave 修改后在执行start slave
 			start slave;
 			show slave status;
-				Slave_IO_Running: Yes
-				Slave_SQL_Running: Yes
+				Slave_IO_Running: Yes       #IQ线程
+				Slave_SQL_Running: Yes	     #SQL线程		
 >>>
 >>>
-		相关配置文件
-			文件名	 |		说明	|	
-			---		 |    :--:	|
-		master.info| 	主库信息|
-		relay-log.info| 	中继日志信息|
-		主机名-relay-bin.xxx|中继日志|
-		主机名-relay-bin.index|索引文件|		   
+>>>
+相关配置文件
+>>>
+文件名	 |		说明	|	
+---		 |    :--:	
+master.info| 	主库信息|
+relay-log.info| 	中继日志信息|
+主机名-relay-bin.xxx|中继日志|
+主机名-relay-bin.index|索引文件|		   
 >>>
 >>####主从同步结构	
 >>>
 		配置一主多从结构
 		1.修改vim /etc/my.cnf	
 		2.mysqldump -uroot -p1qaz@WSX --master-data -B ceshi db1 db5 >/root/two.sql
-		scp /root/two.sql root@192.168.4.53:/root	
+		scp /root/two.sql root@192.168.4.53:/root   
+>>>[master-data]记录当前备份数据对应的日志信息
+>>>
 		3.mysql -uroot -p1qaz@WSX < two.sql;    grep master two.sql
 		4.mysql> change master to master_host='192.168.4.51',master_user="repluser",master_password="1qaz@WSX",master_log_file="master51.000002",master_log_pos=1793;
 		5.mysql> start slave;
