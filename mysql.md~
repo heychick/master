@@ -674,14 +674,14 @@ relay-log.info| 	中继日志信息|
 		mysqld = /usr/local/mysql/bin/mysqld_safe  #指定进场文件路径
 		mysqladmin = /usr/local/mysql/bin/mysqladmin #指定管理命令路径
 		user = root			#指定进场用户
-
+>>>
 		[mysqld1]				#实例进程名称
 		port = 3307			#端口号
 		datadir = /dir1	#数据库目录,需要手动创建
 		socket = /dir1/mysql1.sock 		#指定sock文件的路径和名称
 		pid-file = /dir1/mysqld.pid		#进场pid号文件位置
 		log-error = /dir1/mysqld.err	#错误日志位置
-
+>>>
 		[mysqld2]
 		port = 3308
 		datadir = /dir2
@@ -705,9 +705,153 @@ relay-log.info| 	中继日志信息|
 		mysql -h192.168.4.60 -P3308 -uceshi2 -p1qaz@WSX
 >>>
 >>>
+-----------------------------------
+###Day
+>>>
+>>>####数据分片
+>>>
+		环境:
+>>>>
+		1台客户端 1台分布式  3台服务端
+>>> 工作流程      
+        当mycat收到一个SQL命令时
+        1.解析SQL命令涉及到的表
+        2.然后看对表的配置,如有分片规则,则获取SQL命令里分片字段的值,并匹配分片函数,获取分片列表
+        3.然后将SQL命令发往对应的分片服务器去执行
+        4.最后收集和处理所有分片结果数据,并返回到客户端		
+>>>安装软件
+		java-1.8.0-openjdk
+		mycat
+>>>     		
+		usr/local/mycat/
+		bin		//mycat命令 
+		catlet	//扩展功能
+		conf		//配置文件
+		lib		//mycat使用的jar包
+		logs		//mycat启动日志和运行日志
+		(wrapper.log //mycat服务启动日志 
+		mycat.log //记录SQL脚本执行后的报错内容)
+		mycat服务配置文件
+		rule.xml   分片规则
+		server.xml 设置连接账号及逻辑库
+		schema.xml 配置数据分片
+>>>部署mycat
+		vim /usl/local/mycat/conf/server.xml  #里面包含远程登录用户名密码
+		配置/usl/local/mycat/conf/schema.xml服务
+>>>		
+		配置数据分片的表
+		<schema>  //定义分片信息
+		<table>   //定义表
+		name      //逻辑库名或逻辑表名
+		dataNode  //指定数据节点名
+		rule   	//指定使用的分片规则
+		type=global  //数据不分存储
+>>>
+		<dataNode 选项=值> //定义数据节点
+		name //数据节点名
+		datahost 数据库服务器主机名
+		database 数据库名
+>>>定义数据库服务器IP地址及端口
+		<datahost 选择=值>   //服务器主机名
+		name		//主机名(与datahost对应的主机名)
+		host		//主机名(与IP地址对应的主机名)
+		url	  //数据库服务器IP地址及端口号
+		user  //数据库服务器授权用户
+		password //授权用户密码
+>>>配置数据库服务器    
+		添加授权用户
+		创建存储数据 数据库db1 db2 db3
+>>>	启动服务
+		/usr/local/mycat/bin/mycat --help
+		Usage: /usr/local/mycat/bin/mycat { console | start | stop | restart | status | dump }
+		netstat -antup|grep 8066
+>>>客户端连接
+>>>
+		mysql -h192.168.4.56 -P8066 -uroot -p123456
+>>>
+>>>####分片规则
+>>>枚举法(sharding-by-intfile)  字段值必须在列举范围内选择
+>>>
+	1.	/usr/local/mycat/conf/rule.xml
+		  <table name="employee" primaryKey="ID" dataNode="dn1,dn2,dn3"
+             rule="sharding-by-intfile" />
+
+	2.	usr/local/mycat/conf/rule.xml
+      <tableRule name="sharding-by-intfile">
+              <rule>
+                      <columns>sharding_id</columns>
+                      <algorithm>hash-int</algorithm>
+               </rule>
+       </tableRule>	
+
+
+		  <function name="hash-int"
+                class="io.mycat.route.function.PartitionByFileMap">
+                <property name="mapFile">partition-hash-int.txt</property>
+       </function>
+	3. vim conf/partition-hash-int.txt
+			10000=0
+			10010=1
+			10020=2  添加,由于配置dns1,dns2,dns3需要添加
+>>>创建表
+>>>
+		create table employee (id int primary key auto_increment , sharding_id int , name varchar(10),sex enum ("m","w"));
+		##插入数据验证
+		
+>>>	
+>>>求模法(mod-long) 根据字段值与设定的数字求模结果存储数据
+>>>
+			1.	/usr/local/mycat/conf/rule.xml
+		  <table name="hotnews"  dataNode="dn1,dn2,dn3" rule="mod-long" />
+			2.	usr/local/mycat/conf/rule.xml
+       <tableRule name="mod-long">
+                <rule>
+                        <columns>id</columns>
+                        <algorithm>mod-long</algorithm>
+                </rule>
+       </tableRule>
+       <function name="mod-long" class="io.mycat.route.function.PartitionByMod">
+                <!-- how many data nodes -->
+                <property name="count">3</property>
+       </function>
+       
+	create table hotnews(id int ,title char(20),worker char (15), comment varchar(50),fb_time timestamp);
+	
+		mysql> insert into hotnews (id,title,worker,comment,fb_time)   values (3,'aa',"bb",'sdfasdf',now());
+>>>
+>>>全局
+		 <table name="company" primaryKey="ID" type="global" dataNode="dn1,dn2,dn3" />
+
+		create table company (id int primary key auto_increment,gname char(10),money int ,peploe char(10),gaddr char(50));
+		inse company (gname,money,peploe,gaddr) values ('tedu',10000,'aa','beijing');
+		3台服务器均匀数据
+>>>
+>>>添加新库新表
+>>>
+>>>
+		server.xml
+			 <user name="root">
+                <property name="password">123456</property>
+                <property name="schemas">TESTDB,BBSDB</property>
+			 </user>
+		schema.xml
+       <schema name="BBSDB" checkSQLschema="false" sqlMaxLimit="100">
+               <table name="enmployee2" primaryKey="ID" dataNode="dn1,dn2,dn3" rule="sharding-by-intfile"  />
+               <table name="company2" primaryKey="ID" type="global"
+                       dataNode="dn1,dn2,dn3" />
+       </schema>
+			
 >>>
 >>>
 >>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>
+>>>	
 >>>
 >>>
 >>>	
@@ -717,6 +861,13 @@ relay-log.info| 	中继日志信息|
 >>>
 >>>
 >>>
+>>>
+>>>
+>>>
+>>>
+>>>	
+>>>
+>>>
 >>>	
 >>>
 >>>
@@ -725,8 +876,9 @@ relay-log.info| 	中继日志信息|
 >>>
 >>>
 >>>
+>>>
+>>>
+>>>
 >>>	
->>>
->>>
 >>>
 >>>
