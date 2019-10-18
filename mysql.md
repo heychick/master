@@ -855,9 +855,17 @@ Day
 >>>MHA组成
 >>>
 		MHA Manager(管理节点)
+			管理所有数据库服务器
+			可以单独部署在一台独立的机器上
+			也可以部署在某台数据库服务器上
 		MHA Node(数据节点)
+			存储数据库的mysql服务器
+			运行在每台mysql服务器上
+>>>MHA工作过程
+		由Manager定时探测集群中的master节点
+		当master故障时,Manager自动将拥有最新数据的slave提升为新的master			
 >>>配置环境
-		安装prel包
+		安装prel包 perl-*
 		配置免登陆秘钥
 		配置1主2从
 >>>		
@@ -868,6 +876,16 @@ Day
 		masterha_manager				启动MHA
 		masterha_check_status	检测MHA运行状态
 		masterha_stop					停止MHA
+>>>安装软件包
+>>>		
+		mha4mysql-manager-0.56.tar.gz(管理服务器,数据库服务器)
+		perl Makefile.pl
+		make && make install
+		mha4mysql-node-0.56-0.el6.noarch.rpm(数据库服务器)
+		存在依赖关系需要安装其他软件包
+		garnt all on *.* to root@"%" identified by "1qaz@WSX";  //监控用户
+		grant replication slave on *.* to aaa@"%" identified by '1qaz@WSX'; //数据同步用户
+>>>	
 >>>编写主配置文件
 >>>>模板文件	
 		mkdir /mha
@@ -892,7 +910,6 @@ candidate_master=1			//竞选主服务器
 hostname=192.168.4.51	//服务器IP
 port=3306							//服务端口
 
-
 [server2]
 ......
 [server3]		
@@ -904,17 +921,10 @@ my $ssh_start_vip = "/sbin/ifconfig eth0:$key $vip";	//绑定VIP地址
 my $ssh_stop_vip = "/sbin/ifconfig eth0:$key down";		//释放VIP地址
 >>>部署VIP地址
 		在主库 部署vip地址(51主服务器设置VIP地址192.168.4.100)
-		ifconfig eth0:1 192.168.4.100
+		ifconfig eth0:1 192.168.4.100(临时,重启机器则会没掉)
 		查看vip地址
-		ifconfig eth0:1
->>>安装软件包
->>>		
-		mha4mysql-manager-0.56.tar.gz(管理服务器,数据库服务器)
-		mha4mysql-node-0.56-0.el6.noarch.rpm(数据库服务器)
-		存在依赖关系需要安装其他软件包
-		garnt all on *.* to root@"%" identified by "1qaz@WSX";  //监控用户
-		grant replication slave on *.* to aaa@"%" identified by '1qaz@WSX'; //数据同步用户
->>>	
+		ifconfig eth0:1  或ip addr show eth0
+
 >>>
 >>>51主服务器启用半同步复制,及禁止自动删除中继日志文件(默认中继日志文件保留近2天.
 >>>
@@ -939,7 +949,8 @@ my $ssh_stop_vip = "/sbin/ifconfig eth0:$key down";		//释放VIP地址
 		rpl_semi_sync_master_enabled=1
 		rpl_semi_sync_slave_enabled=1
 		
->>>
+>>>配置主从结构
+		change master ......
 >>>
 >>>####测试配置
 >>>
