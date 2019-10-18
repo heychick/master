@@ -540,7 +540,12 @@ unsigned|	使用无符号存储范围
 				Slave_IO_Running: Yes       #IQ线程
 				Slave_SQL_Running: Yes	     #SQL线程		
 >>>
->>>
+>>>>>
+		额外
+		mysql> stop slave;
+		mysql> reset slave all;
+		reset slave all;是清除从库的同步复制信息、包括连接信息和二进制文件名、位置。
+		从库上执行这个命令后，使用show slave status将不会有输出。
 >>>
 相关配置文件
 >>>
@@ -843,35 +848,141 @@ relay-log.info| 	中继日志信息|
 			
 >>>
 >>>
->>>
->>>
->>>
->>>
->>>
->>>
->>>
+----------------------------------------
+Day     
 >>>
 >>>	
+>>>MHA组成
 >>>
->>>
+		MHA Manager(管理节点)
+		MHA Node(数据节点)
+>>>配置环境
+		安装prel包
+		配置免登陆秘钥
+		配置1主2从
+>>>		
+>>>管理集群命令
+		ls  /rootperl5/bin/masterha_*
+		masterha_check_ssh			检查MHA的SSH配置状况
+		masterha_checkrepl			检查MySQL复制状况
+		masterha_manager				启动MHA
+		masterha_check_status	检测MHA运行状态
+		masterha_stop					停止MHA
+>>>编写主配置文件
+>>>>模板文件	
+		mkdir /mha
+		vim /mha/app1.cnf
+>>>>		
+[server default]   //管理服务默认配置
+manager_log=/mha/manager.log  //日志文件
+manager_workdir=/mha    //工作目录
+master_ip_failover_script=/mha/master_ip_failover  //故障切换脚本
+
+repl_password=1qaz@WSX  //主服务器数据同步授权用户
+repl_user=aaa						//密码
+
+ssh_port=22    //ssh服务端口
+ssh_user=root		//访问ssh服务器用户
+
+user=root				//监控用户
+password=1qaz@WSX //密码
+
+[server1]			//指定第一台数据库服务器
+candidate_master=1			//竞选主服务器
+hostname=192.168.4.51	//服务器IP
+port=3306							//服务端口
+
+
+[server2]
+......
+[server3]		
+>>>>	
+>>>创建故障切换脚本
+my $vip = '192.168.4.100/24';  # Virtual IP    //定义VIP地址
+my $key = "1";														//定义地址编号	
+my $ssh_start_vip = "/sbin/ifconfig eth0:$key $vip";	//绑定VIP地址
+my $ssh_stop_vip = "/sbin/ifconfig eth0:$key down";		//释放VIP地址
+>>>部署VIP地址
+		在主库 部署vip地址(51主服务器设置VIP地址192.168.4.100)
+		ifconfig eth0:1 192.168.4.100
+		查看vip地址
+		ifconfig eth0:1
+>>>安装软件包
+>>>		
+		mha4mysql-manager-0.56.tar.gz(管理服务器,数据库服务器)
+		mha4mysql-node-0.56-0.el6.noarch.rpm(数据库服务器)
+		存在依赖关系需要安装其他软件包
+		garnt all on *.* to root@"%" identified by "1qaz@WSX";  //监控用户
+		grant replication slave on *.* to aaa@"%" identified by '1qaz@WSX'; //数据同步用户
 >>>	
 >>>
+>>>51主服务器启用半同步复制,及禁止自动删除中继日志文件(默认中继日志文件保留近2天.
+>>>
+		vim /etc/my.cnf
+		开启log_bin
+		plugin-load=rpl_semi_sync_master=semisync_master.so
+		rpl_semi_sync_master_enabled=1
+
+		plugin-load=rpl_semi_sync_slave=semisync_slave.so
+		rpl_semi_sync_slave_enabled=1
+		relay_log_purge=0
+		或
+		plugin-load="rpl_semi_sync_master=semisync_master.so;rpl_semi_sync_slave=semisync_slave.so"
+>>>52 53启用半同步复制模式 及禁用自动删除中继日志文件
+>>>
+		vim /etc/my.cnf
+		log_bin=master52
+		server_id=52
+		relay_log_purge=0
+		plugin-load="rpl_semi_sync_master=semisync_master.so;rpl_semi_sync_slave=semisync_slave.so"
+
+		rpl_semi_sync_master_enabled=1
+		rpl_semi_sync_slave_enabled=1
+		
 >>>
 >>>
+>>>####测试配置
 >>>
+		测试ssh配置
+		 masterha_check_ssh --conf=/mha/app1.cnf
+		 Fri Oct 18 15:48:11 2019 - [info] All SSH connection tests passed successfully.
+		测试主从同步配置
+		masterha_check_repl --conf=/mha/app1.cnf
+		MySQL Replication Health is OK.
+		
 >>>
+>>>####启动管理服务
 >>>
->>>
->>>
->>>
->>>
+		masterha_manager --conf=/mha/app1.cnf --remove_dead_master_conf --ignore_last_failover
+		--remove_dead_master_conf	  //删除宕机主库的配置
+		--ignore_last_failover			//忽略xxx.health文件
+		查看状态
+		masterha_check_status --conf=/mha/app1.cnf
+		停止服务
+		masterha_stop --conf=/mha/app1.cnf
 >>>	
+>>>访问集群
 >>>
->>>
+		主服务器添加库创建表,插入数据,2台从服务器查看用户
+		客户端访问VIP地址
+		mysql -h192.168.4.100   -uyay -p1qaz@WSX
 >>>	
+>>>测试高可用
+		停止mysql服务
+		从服务器看 ifconfig eth0:1
+		aap1.cnf无server1信息		
 >>>
->>>
->>>
+>>>修复故障服务器
+		启动mysql服务
+		与主服务器数据一致
+		指定主服务器信息
+		启动slave进程
+		查看状态信息
+		具体操作:
+		修改主配置文件
+		测试集群环境
+		重启管理服务
+		查看服务状态
 >>>
 >>>
 >>>
@@ -882,3 +993,4 @@ relay-log.info| 	中继日志信息|
 >>>	
 >>>
 >>>--nodeps rpm在安装/卸载时，不检查依赖关系
+mysql -uroot -p1qaz@WSX -e "show slave status\G"|grep -Ei  'yes|192.168.4.52'
