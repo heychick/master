@@ -526,6 +526,8 @@ unsigned|	使用无符号存储范围
 					replication slave 复制命令权限
 		从:
 			mysqldump -uroot -p1qaz@WSX --master-data db5 >/root/db5.sql
+			mysqldump -uroot -p1qaz@WSX --master-data  -A > /root/all1.sql
+						-A 导出所有库
 			scp /root/db5.sql root@192.168.4.52:/root/
 			grep master51 /root/db5.sql 
 >>>			
@@ -540,6 +542,7 @@ unsigned|	使用无符号存储范围
 				Slave_IO_Running: Yes       #IQ线程
 				Slave_SQL_Running: Yes	     #SQL线程		
 >>>
+		mysql -uroot -p1qaz@WSX -e "show slave status\G"|grep -Ei  'yes|192.168.4.52'
 >>>>>
 		额外
 		mysql> stop slave;
@@ -597,7 +600,7 @@ relay-log.info| 	中继日志信息|
 >>>####复制模式	
 >>>
 		查看是否允许动态加载模块(YES)
-		show variables like 'have%loading';
+		show variables like 'have_dynamic_loading';
 		加载模块
 		#主模块
 		install plugin rpl_semi_sync_master SONAME "semisync_master.so";
@@ -634,6 +637,7 @@ relay-log.info| 	中继日志信息|
 			18 [server1] [server12 指定IP,端口  
 			[MySql Monitor] 定义要监听的数据库节点
 			[Read-Write Service] 定义读写分离的数据库节点  
+			配置用户名密码时:检测客户端访问的用户是否存在
 			[Read-Write-Listener] 定义读写分离服务端口
 			port=4006
 			[MaxAdmin Listener] 定义管理服务端口号
@@ -996,12 +1000,333 @@ my $ssh_stop_vip = "/sbin/ifconfig eth0:$key down";		//释放VIP地址
 		查看服务状态
 >>>
 >>>
+------------------------------
+Day
+>>>PXC特点
+	数据强一致性,无同步延迟
+>>>相关配置文件
+		/etc/percona-xtradb-cluster.conf.d/
+		mysqld.cnf  #数据库服务运行参数配置
+		mysqld_safe.cnf  #Percona Server5.7配置文件
+		wsrep.cnf				#PXC集群配置文件
+
 >>>
+		3306			数据库服务端口
+		4567			集群通信端口
+		4444			SST端口
+		4568			IST端口
+		SST		State Snapshot Transfer 全量同步
+		iST		Incremental State Transfer 增量同步
+>>>
+		主机名映射
+>>>安装
+		#!/bin/bash
+		cd /root/PXC
+		yum -y install libev-4.15-1.el6.rf.x86_64.rpm percona-xtrabackup-24-2.4.13-1.el7.x86_64.rpm qpress-1.1-14.11.x86_64.rpm
+		mkdir percona;tar -xf Percona-XtraDB-Cluster-5.7.25-31.35-r463-el7-x86_64-bundle.tar -C percona
+		cd percona/ ;yum -y install Percona-XtraDB*.rpm	
+>>>
+		vim /etc/percona-xtradb-cluster.conf.d/mysqld.cnf 
+		修改server_id
+		vim /etc/percona-xtradb-cluster.conf.d/wsrep.cnf
+		  8 wsrep_cluster_address=gcomm://192.168.4.71,192.168.4.72
+			集群成员列表
+		  27 wsrep_cluster_name=pxc-cluster
+			集群名称 需一致默认即可
+		  25 wsrep_node_address=192.168.4.71
+			本机IP
+		  30 wsrep_node_name=pxc71
+			本机主机名
+		  39 wsrep_sst_auth="sstuser:1@qazWSX"
+			全量认证时同步用户名密码	
+>>>启动程序	
+>>>
+		[root@71 percona-xtradb-cluster.conf.d]# ll /var/lib/mysql
+		总用量 0
+		启动程序
+		systemctl start mysql@bootstrap.service
+		日志文件查询密码,登入修改密码
+		添加授权
+		grant reload,lock tables,replication client,process on *.* to sstuser@"localhost" identified by '1qaz@WSX';    #或者直接all所有权限
+		剩余机器启动服务
+		systemctl start mysql 
+		数据,授权数据都会增量同步过来
+		netstat -antu|grep -E '3306|4567'
+		检查配置
+		show status  like '%wsrep%';
+		wsrep_incoming_addresses         | 192.168.4.73:3306,192.168.4.71:3306,192.168.4.72:3306 | #成员列表
+		wsrep_cluster_size               | 3  									#集群服务器台数
+		wsrep_cluster_status             | Primary 							#集群状态
+		wsrep_connected                  | ON  									#连接状态
+		wsrep_ready                      | ON  									#服务状态
+
+>>>	
+>>>
+>>>测试高可用
+		停止某一台机器服务.插入数据,在恢复查询是否恢复
+		如果停止71进程			systemctl stop mysql@bootstrap.service
+		恢复需要修改配置文件取消192.168.4.71.在启动.添加192.168.4.71在启动进程.
+		PS:测试恢复不需要改配置文件,数据仍可同步过来
+>>>
+>>>MySQL存储引擎
+>>>	
+		MySQL 5.0/5.1-->	MyISAM
+		MySQL 5.5/5.6-->	InnoDB
+>>>
+		show engines;   #列出可用的存储引擎
+		未指定时,使用默认存储引擎
+		alter table 表名  engine=存储引擎名
+		修改服务存储引擎
+		/etc/my.cnf
+			default-storage-engine=存储引擎
+>>>myisam存储引擎
+		主要特点:
+			支持表级锁
+			不支持事物,事物回滚,外键
+>>>innodb存储引擎
+		主要特点:
+			支持行级锁定
+			支持事物,事物回滚,外键
+		事物日志文件
+			ibdate1
+			ib_logfile0
+			ib_logfile1
+>>>MySQL锁机制
+		锁粒度
+			表级锁:对整张表加锁
+			行级锁:仅对被访问的行分别加锁
+		锁类型
+			读锁(共享锁):支持并发读
+			写锁(互斥锁,排它锁):是独占锁,上锁期间其他线程不能读表或写表
+		查看当前锁状态
+			show status like 'table_lock%';	
+>>>
+>>>Redis
+>>>
+>>>初始配置
+		./utils/install_server.sh
+		--端口	6379
+		--主配置文件 /etc/redis/6379.conf
+		--日志文件		/var/log/redis_6379.log
+		--数据库目录	/var/lib/redis/6379
+		--服务启动程序 /usr/local/bin/redis-server
+		--命令行连接命令 /usr/local/bin/redis-cli
+>>>
+>>>管理服务
+		/etc/init.d/redis_6379 stop
+		/etc/init.d/redis_6379 start
+		ps -C redis-server
+		netstat -utnlp | grep :6379
+>>>
+>>>常用命令
+		set key名  key值               //存储1个key值
+		mset key名列表					//存储多个key值
+		get key名							//获取key值
+		mget 								//获取多个key值
+		select 数据库编号0-15		//切换库(配置文件里面可设置)
+		keys *								//显示所有key名
+		keys a?							//显示指定key名
+		exists key名					//测试key名是否存在
+		ttl key名							//查看key生存时间
+		type key名						//查看key类型
+		move key名 库编号				//移动key到指定库
+		expire key名 数字				//设置key有效时间
+		del key名							//删除指定的key
+		flushall							//删除内存里面所有key
+		flushdb							//删除所在库的所有key
+		sava									//保存所有key到硬盘
+		shutdown							//停止服务
+>>>
+>>>配置分类
+		NETWORK						网络
+		GENERAL						常规
+		SNAPSHOTTING				快照
+		REPLICATION					复制	
+		SECURITY						安全	
+		CLIENTS						客户端
+		MEMORY MANAGEMENT		内存管理	
+>>>常用配置
+		port 6397				端口
+		bind 127.0.0.1  IP地址
+		deamonize yes 	守护进程方式运行
+		databases 16		数据库个数
+		logfile  /var/log/redis_6379.log  日志文件
+		maxclients  10000					并发连接数量
+		dir /var/lib/redis/6379			数据库目录
+>>>
+		wget http://download.redis.io/releases/redis-5.0.4.tar.gz
+		rpm -q gcc||yum -y install gcc
+		tar -xzvf redis-5.0.4.tar.gz 
+		cd redis-5.0.4/
+		make && make install
+		./utils/install_server.sh 
+		redis-cli -h 127,., .0.0.1 -p 65535 set school tarena
+		redis-cli -h 127.0.0.1 -p 65535 get school 
+
+>>>	
+>>>
+>>>部署lnmp+redis	
+>>>
+		yum -y install gcc pcre-devel zlib-devel	
+		tar -zxf nginx-1.12.2.tar.gz
+		cd /nginx-1.12.2/
+		./configure
+		make && make install
+		vim /usr/local/nginx/conf/nginx.conf
+		/usr/local/nginx/sbin/nginx 		
+		yum -y install php php-fpm
+		systemctl restart php-fpm
+		systemctl enable php-fpm
+
+		tar -xzf php-redis-2.2.4.tar.gz	
+		cd phpredis-2.2.4/
+		phpize
+		./configure --with-php-config=/usr/bin/php-config
+		make && make install
+		ll /usr/lib64/php/modules/
+		vim /etc/php.ini
+		728 extension_dir = '目录名';
+		730 extension = '模块名';
+		systemctl restart php-fpm
+		php -m |grep -i redis  //检查是否支持模块	
+>>>	
+>>>
+>>>redis集群(分布式高可用集群 ,同时能够实现数据自动同步) 	
+>>>
+>>>###创建集群
+>>>>1.部署管理主机
+			1.1部署ruby脚本运行环境
+			ruby 解释ruby程序
+			rubygems 提供连接程序软件
+			yum -y install rubygems
+			gem install redis-3.2.1.gem 
+			1.2创建管理集群脚本
+			tar -xzf redis-5.0.4.tar.gz    //5版本可能存在问题
+			cd redis-5.0.4/
+			mkdir /root/bin
+			cp src/redis-trib.rb  /root/bin/
+>>>>2.创建集群
+			1.1创建集群
+			配置6台redis服务器
+			vim /etc/redis/redis.conf
+				 cluster-enabled yes                  //启用集群功能
+				 cluster-config-file nodes-6379.conf   //存储集群信息文件
+				 cluster-node-timeout 5000						//连接超时时间(毫秒)
+			重启redis服务
+			检查端口,集群通信端口=默认服务端口+10000
+			redis-trib.rb create --replicas 1 192.168.4.51:6351 192.168.4.52:6352  192.168.4.53:6353 192.168.4.54:6354 192.168.4.55:6355 192.168.4.56:6356
+				--replicas 1(指从库) ,默认3主 如果填2则时1主2从.
+				对应配置文件/var/lib/redis/6379/nodes-6379.conf
+			1.2检查集群
+			redis-cli -h 192.168.4.52 -p 6352 cluster info
+			查看集群节点信息
+			redis-cli -h 192.168.4.52 -p 6352 cluster nodes 
+			管理服务器执行:redis-trib.rb info
+			//检查集群主机角色
+			redis-trib.rb check 192.168.4.51:6351
+>>>	
+>>>###创建集群
+>>>>1.测试集群功能	
+		任意停掉一台master服务器redis服务
+		--master宕机后对应的slave自动被选举为master
+		--原master启动后会自动配置为当前master的slave
+		检测集群
+			redis-trib.rb check 192.168.4.51:6351	
+			redis-trib.rb info 192.168.4.51:6351				
+>>>
+>>>>2.添加服务器
+		添加master主机
+			2.1部署redis服务
+				安装gcc
+				解压redis源码包 make && make install
+				./utils/install_server.sh
+				修改配置文件:地址,端口,开起集群功能
+				重启服务
+				netstat 检查2个端口
+			2.2添加master主机步骤
+				添加master主机时不指定主机角色,默认新主机被选为master
+				添加的master直接,需要手动分片hash槽
+			redis-trib.rb add-node 192.168.4.58:6358 192.168.4.51:6351
+			redis-trib.rb reshard 192.168.4.51:6351
+				重新分片问题
+					-移除hash槽个数
+					-接收hash槽主机ID
+					-移除hast槽主机ID
+		添加slave主机
+				部署redis服务
+				添加slave主机
+			redis-trib.rb add-node --slave 192.168.4.59:6359 192.168.4.51:6351
+			2.3删除集群中的redis服务器
+				删除master服务器
+					-释放占用的hash槽
+					-移除主机
+				删除slave服务器
+					-从服务器没有hash槽,直接移除即可.
+					-移除时指定从服务器id值.
+					-移除后会停止从服务器进程
+			redis-trib.rb del-node 任意ip端口 从ID 5c3bd81d07c43e5e05ee931f035493ee18fb5092
+			2.4把删除的redis服务,在添加到集群里
+				-启动被删除的redis服务
+				192.168.4.58:6358> cluster reset    或者删除配置文件/var/lib/redis/6379/nodes-6379.conf
+			2.5删除集群服务恢复独立redis
+			>>>>expire.sh
+			redis-trib.rb  rebalance  任意ip端口  //重新平均分片槽
+>>>
+>>>	
+>>>
+>>>	
+>>>
+>>>
+>>>
+>>>	
+>>>
+>>>	
+>>>
+>>>
+>>>
+>>>	
+>>>
+>>>	
+>>>
+>>>
+>>>
+>>>	
+>>>
+>>>	
+>>>
+>>>
+>>>
+>>>	
+>>>
+>>>	
+>>>
+>>>
+>>>
+>>>	
+>>>
+>>>	
+>>>
+>>>
+>>>
+>>>	
+>>>
+>>>	
+>>>
+>>>
+>>>
+>>>	
+>>>
+>>>	
 >>>
 >>>
 >>>
 >>>
 >>>	
 >>>
+>>>	
+>>>
+>>>
+>>>	
+>>>zlib   数据压缩	
 >>>--nodeps rpm在安装/卸载时，不检查依赖关系
-mysql -uroot -p1qaz@WSX -e "show slave status\G"|grep -Ei  'yes|192.168.4.52'
+
