@@ -251,7 +251,7 @@ unsigned|	使用无符号存储范围
 				命令格式  mysql > load data infile  "目录/文件名"
 							into table 库名 表名
 							fields terminated by "分隔符"
-							lines  terminated by "\n";
+							lines  terminated by "\n";             
 			数据导入步骤
 					1.把系统文件拷贝到检索目录下
 					2.创建存储数据库和表
@@ -565,7 +565,7 @@ relay-log.info| 	中继日志信息|
 		1.修改vim /etc/my.cnf	
 		2.mysqldump -uroot -p1qaz@WSX --master-data -B ceshi db1 db5 >/root/two.sql
 		scp /root/two.sql root@192.168.4.53:/root   
->>>[master-data]记录当前备份数据对应的日志信息
+>>>[master-data]记录当前备份数据对应的日志信息    -B 多个库时条件
 >>>
 		3.mysql -uroot -p1qaz@WSX < two.sql;    grep master two.sql
 		4.mysql> change master to master_host='192.168.4.51',master_user="repluser",master_password="1qaz@WSX",master_log_file="master51.000002",master_log_pos=1793;

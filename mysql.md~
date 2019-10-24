@@ -251,7 +251,7 @@ unsigned|	使用无符号存储范围
 				命令格式  mysql > load data infile  "目录/文件名"
 							into table 库名 表名
 							fields terminated by "分隔符"
-							lines  terminated by "\n";
+							lines  terminated by "\n";             
 			数据导入步骤
 					1.把系统文件拷贝到检索目录下
 					2.创建存储数据库和表
@@ -1269,7 +1269,7 @@ Day
 				-启动被删除的redis服务
 				192.168.4.58:6358> cluster reset    或者删除配置文件/var/lib/redis/6379/nodes-6379.conf
 			2.5删除集群服务恢复独立redis
-			expire.sh
+			>>>>expire.sh
 			redis-trib.rb  rebalance  任意ip端口  //重新平均分片槽
 >>>
 >>>	
