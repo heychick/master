@@ -1274,40 +1274,180 @@ Day
 >>>
 >>>	
 >>>
+---------------------
+Day
+>>>1.redis主从复制	
+>>>
+		1.1结构模式
+		一主一从 一主多从 主从从
+>>>
+>>>配置
+		redis本身就是master,所以无需配置
+		192.168.4.52:6352> slaveof 192.168.4.51 6351   从配置即可,配置完立即生效
+		192.168.4.52:6352> SLAVEOF no one    取消主从关系
+		info replication 查看复制信息
+		永久配置修改配置文件 /etc/redis/6379.conf
+				######## REPLICATION ##############
+			redis 4版本 # slaveof <masterip> <masterport>
+			redis 5版本 #  289  replicaof 192.168.4.51 6351
+>>>
+>>>
+		添加密码设置			
+		######### SECURITY ######
+		# requirepass foobared      //配置master,定义连接密码
+		295 # masterauth <master-password>   //配置slave,主库密码
+		命令行也可以配置
+		config get masterauth 配置项
+		config set masterauth  配置项  值
+		config rewrite //保存到配置文件
+>>>
+>>>哨兵服务
+		客户端安装redis即可
+		yum -y install gcc
+		tar -xzf redis-4.0.8.tar.gz	
+		make && make install 
+		无需初始化.
+		##编辑配置文件,可以参考edis-4.0.8/sentinel.conf
+		cp redis-4.0.8/sentinel.conf /etc/
+			bind 0.0.0.0  ip允许所有
+			port 26379    端口
+			sentinel monitor server51 192.168.4.51 6351 1 
+			sentinel auth-pass server51 123456  有密码可以设置
+			##启动程序
+		redis-sentinel /etc/sentinel.conf
+>>>
+>>>数据持久化
+>>>
+>>>RDB	
+		按照指定时间间隔,将内存中的数据集快照写入硬盘
+		192.168.4.50:65535> config get dbfilename
+		/var/lib/redis/6379/dump.rdb
+>>>        	
+>>>   		
+		219 save 900 1		//15分钟且有一个key改变
+		220 save 300 10		//5分钟且有10个key改变
+		221 save 60 10000	//1分钟且有10000个key改变
+		254 dbfilename dump.rdb		
+>>>
+>>>	
+		手动存盘
+		-save			//阻塞写存盘
+		-bgsave		//不阻塞写存盘
+>>>
+>>> 
+		备份数据
+			备份dump.rdb 文件到其他位置
+		恢复数据   
+			拷贝备份文件到数据库目录,重启redis服务
+>>>
+>>>
+		RDB 的优缺点
+		优点：
+		1 适合大规模的数据恢复。
+		2 如果业务对数据完整性和一致性要求不高，RDB是很好的选择。
+>>>
+		缺点：
+		1 数据的完整性和一致性不高，因为RDB可能在最后一次备份时宕机了。
+		2 备份时占用内存，因为Redis 在备份时会独立创建一个子进程，将数据写入到一个临时文件（此时内存中的数据是原来的两倍哦），最后再将临时文件替换之前的备份文件。
+		所以Redis 的持久化和数据的恢复要选择在夜深人静的时候执行是比较合理的。
+
+>>>AOF	
+>>>
+		追加方式记录写操作的文件
+		记录reids服务所有写操作
+		不断的将新的写操作,追加到文件的末尾
+		默认没有启用
+		使用cat命令可以查看文件内容
+>>>>启动AOF
+>>>>
+		192.168.4.50:65535> config get appendonly
+		config set appendonly yes  //启用aof,默认no
+		config rewrite
+		704 appendfilename "appendonly.aof" //日志文件名
+>>>>
+>>>>
+		备份数据appendonly.aof文件到其他位置
+			cp 数据库目录/appendonly.aof 备份目录
+		恢复数据
+			拷贝备份文件到数据库目录
+			重启redis服务					
+>>>>
+		729 # appendfsync always   //时时记录,并完成磁盘同步
+		730 appendfsync everysec		//每秒记录一次,并完成磁盘同步
+		731 # appendfsync no				//写入aof,不执行磁盘同步
+		
+		771 auto-aof-rewrite-percentage 100  //再次重写,增长百分比
+		772 auto-aof-rewrite-min-size 64mb  //首次重写触发值
+		修复AOF文件
+		redis-check-aof --fix /var/lib/redis/65535/appendonly.aof 
+>>>>
+		AOF 的优缺点
+		优点：数据的完整性和一致性更高
+		缺点：因为AOF记录的内容多，文件会越来越大，数据恢复也会越来越慢。		
+>>>>
+>>>string 字符串
+		set 参数如下:
+		ex 秒
+		px 毫秒
+		默认永不过期
+		nx 不存在赋值
+		xx存在赋值 (默认)
+>>>>
+		2.192.168.4.55:6355> set zhj ABCDEF
+		OK
+		192.168.4.55:6355> setrange zhj 2 XX  ##从偏移量开始复写key的特定位的值
+		(integer) 6
+		192.168.4.55:6355> get zhj
+		"ABXXEF"
+		192.168.4.55:6355> strlen zhj  ##统计字串长度
+		(integer) 6
+		192.168.4.55:6355> append zhj G  ##存在则追加,不存在则创建key及value,返回key长度
+		(integer) 7
+		192.168.4.55:6355> get zhj
+		"ABXXEFG"
+		3.setbit key offset value
+			-对key所存储字串,设置或清除特定偏移量上的位(bit)
+			-value值可以为1或0,offset为0~2^32之间
+			-key不存在,则创建新的key
+			set a 0 1 
+		4.bitcount key
+			-统计字串中被设置为1的比特位数量
+			bitcount a
+		5.dcer key
+			-将key中的值减1,key不存在则先初始化为0,在减1
+			set test 10
+			decr test
+		6.decrby key decrement
+			将key中的值,减去decrement
+			set aa 200
+			decrby aa 20
+		7.getrange key start end 
+			-返回字串值中的子字串,截取范围为start和end
+			-负数偏移量表示从末尾开始计数,-1表示最后一个字符,-2表示倒数第二个
+			set aa ABCDF
+			getrange aa 0 2			//ABC
+			getrange aa -3  -1   //CDF
+		8.incr key 
+			将key的值加1,如果key不存在,则初始化为0后面加1	
+			set aa 
+		9.incrby key increment
+			将key的值增加increment	
+			incrby aa 10
+		10.incrbyfloat key increment
+			-为key中所存储的值加上浮点数增量increment
+			set num 17.8 
+			incrbyfloat num 1.2
+		11.meget key 
+			获取一个或多个key值,空格分隔,具有原子性
+		12.mset key value	
+			设置多个key及值,空格分隔,具有原子性
+
+>>>	
+>>>
 >>>	
 >>>
 >>>
->>>
->>>	
->>>
->>>	
->>>
->>>
->>>
->>>	
->>>
->>>	
->>>
->>>
->>>
->>>	
->>>
->>>	
->>>
->>>
->>>
->>>	
->>>
->>>	
->>>
->>>
->>>
->>>	
->>>
->>>	
->>>
->>>
->>>
+>>> 
 >>>	
 >>>
 >>>	
