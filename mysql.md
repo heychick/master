@@ -369,7 +369,7 @@ unsigned|	使用无符号存储范围
 		记录查询之外的所有sql命令
 >>>
 		vim /etc/my.cnf
-		log_bin					#启用binlog日志	
+		log-bin					#启用binlog日志	
 		server_id=50           #指定值1~255
 		#查看日志
 		show master status;
@@ -391,7 +391,7 @@ unsigned|	使用无符号存储范围
 		#索引文件
 		1.修改日志文件路径
 		vim /etc/my.cnf
-		log_bin=/log/zhj
+		log-bin=/log/zhj
 		server_id=50	
 		max_binlog_size=数值m ---指定日志文件容量,默认1G	
 		mkdir /log
@@ -518,7 +518,7 @@ unsigned|	使用无符号存储范围
 		2.配置
 		主:
 			vim /etc/my.cnf
-				log_bin=master51
+				log-bin=master51
 				server_id=51   ##不允许与主库server_id相同
 			systemctl restart mysqld	
 			grant replication slave on *.* to repluser@"%" identified by "1qaz@WSX";
@@ -577,13 +577,13 @@ relay-log.info| 	中继日志信息|
 		rm -rf relay-log.info master.info 
 		rm -rf  mysql4*	
 		vim /etc/my.cnf
-			log_bin=master53
+			log-bin=master53
 			server_id=53
 		grant replication slave on *.* to repluser@"%" identified by '1qaz@WSX';
 		54为主从   53主--> 54从(主)-->>55-->从
 		54操作
 		vim /etc/my.cnf
-			log_bin=master54
+			log-bin=master54
 			server_id=54
 			log_slave_updates //允许级联复制
 		grant replication slave on *.* to repluser@"%" identified by '1qaz@WSX';			
@@ -933,7 +933,7 @@ my $ssh_stop_vip = "/sbin/ifconfig eth0:$key down";		//释放VIP地址
 >>>51主服务器启用半同步复制,及禁止自动删除中继日志文件(默认中继日志文件保留近2天.
 >>>
 		vim /etc/my.cnf
-		开启log_bin
+		开启log-bin
 		plugin-load=rpl_semi_sync_master=semisync_master.so
 		rpl_semi_sync_master_enabled=1
 
@@ -945,7 +945,7 @@ my $ssh_stop_vip = "/sbin/ifconfig eth0:$key down";		//释放VIP地址
 >>>52 53启用半同步复制模式 及禁用自动删除中继日志文件
 >>>
 		vim /etc/my.cnf
-		log_bin=master52
+		log-bin=master52
 		server_id=52
 		relay_log_purge=0
 		plugin-load="rpl_semi_sync_master=semisync_master.so;rpl_semi_sync_slave=semisync_slave.so"
@@ -1373,7 +1373,7 @@ Day
 			重启redis服务					
 >>>>
 		729 # appendfsync always   //时时记录,并完成磁盘同步
-		730 appendfsync everysec		//每秒记录一次,并完成磁盘同步
+		730 appendfsync everysec		//每秒记录一次,并完成磁盘同步(默认)
 		731 # appendfsync no				//写入aof,不执行磁盘同步
 		
 		771 auto-aof-rewrite-percentage 100  //再次重写,增长百分比
@@ -1442,10 +1442,42 @@ Day
 		12.mset key value	
 			设置多个key及值,空格分隔,具有原子性
 
->>>	
->>>
->>>	
->>>
+>>>List列表	
+>>>>
+		1.
+		lpush list aa bb cc dd ee
+		2.
+		llen list
+		3.
+		lrange list 0 -1
+		4.
+		lpop list
+		5.
+		lindex list 1
+		6.
+		lset list  1   zhj
+		7.
+		rpush test 1
+		8.
+		rpop test
+>>>Hash表	
+>>>>
+		1.将hash表中field设置为value
+		hset hash baidu  www.baidu.com
+		2.同时给hash表中多个field赋值
+		HMSET hash aa www.aa.com bb www.bb.com
+		3.返回hash表中多个field的值
+		hmget hash baidu jd
+		4.获取hash表中的field值
+		hget hash baidu		===="www.baidu.com"
+		5.查询hash表中所有field名称
+		hkeys hash
+		6.返回hash表中所有field值
+		hgetall hash	
+		7.返回hash表中所有filed的值
+		hvals key
+		8.删除hash表中多个field
+		hdel key 
 >>>
 >>> 
 >>>	
