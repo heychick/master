@@ -518,7 +518,7 @@ unsigned|	使用无符号存储范围
 		2.配置
 		主:
 			vim /etc/my.cnf
-				log_bin=master51
+				log-bin=master51
 				server_id=51   ##不允许与主库server_id相同
 			systemctl restart mysqld	
 			grant replication slave on *.* to repluser@"%" identified by "1qaz@WSX";
@@ -577,13 +577,13 @@ relay-log.info| 	中继日志信息|
 		rm -rf relay-log.info master.info 
 		rm -rf  mysql4*	
 		vim /etc/my.cnf
-			log_bin=master53
+			log-bin=master53
 			server_id=53
 		grant replication slave on *.* to repluser@"%" identified by '1qaz@WSX';
 		54为主从   53主--> 54从(主)-->>55-->从
 		54操作
 		vim /etc/my.cnf
-			log_bin=master54
+			log-bin=master54
 			server_id=54
 			log_slave_updates //允许级联复制
 		grant replication slave on *.* to repluser@"%" identified by '1qaz@WSX';			
@@ -933,7 +933,7 @@ my $ssh_stop_vip = "/sbin/ifconfig eth0:$key down";		//释放VIP地址
 >>>51主服务器启用半同步复制,及禁止自动删除中继日志文件(默认中继日志文件保留近2天.
 >>>
 		vim /etc/my.cnf
-		开启log_bin
+		开启log-bin
 		plugin-load=rpl_semi_sync_master=semisync_master.so
 		rpl_semi_sync_master_enabled=1
 
@@ -945,7 +945,7 @@ my $ssh_stop_vip = "/sbin/ifconfig eth0:$key down";		//释放VIP地址
 >>>52 53启用半同步复制模式 及禁用自动删除中继日志文件
 >>>
 		vim /etc/my.cnf
-		log_bin=master52
+		log-bin=master52
 		server_id=52
 		relay_log_purge=0
 		plugin-load="rpl_semi_sync_master=semisync_master.so;rpl_semi_sync_slave=semisync_slave.so"
@@ -1208,7 +1208,7 @@ Day
 >>>>2.创建集群
 			1.1创建集群
 			配置6台redis服务器
-			vim /etc/redis/redis.conf
+			vim /etc/redis/6379.conf
 				 cluster-enabled yes                  //启用集群功能
 				 cluster-config-file nodes-6379.conf   //存储集群信息文件
 				 cluster-node-timeout 5000						//连接超时时间(毫秒)

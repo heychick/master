@@ -1,0 +1,33 @@
+---
+- hosts: web1
+  remote_user: root
+  tasks:
+  - name: copy install_shell to clien
+    copy: src=/etc/ansible/roles/zabbix_agent.sh dest=/usr/local/src/zabbix_agent.sh
+  - name: sent tar
+    copy: src=/etc/ansible/roles/zabbix-3.4.4.tar.gz dest=/usr/local/src/zabbix-3.4.4.tar.gz
+#  - name: yum#####
+#    yum:
+#      name: gcc 
+#      name: pcre-devel
+#      name: curl-devel
+#      name: net-snmp-devel
+#      name: libevent-devel
+#      state: installed  
+  - name:  create zabbix
+    user:
+      name: zabbix
+      shell: /sbin/nologin
+  - name:   install shell
+    script: /etc/ansible/roles/zabbix_agent.sh
+
+
+#  - name: install shell
+#    shell: /bin/bash /usr/local/src/zabbix_agent.sh
+#  - name: sed shell
+#    shell: "sed -i 's/^Server/#Server/' /usr/local/etc/zabbix_agentd.conf"
+#    shell: "sed -i 's/# StartAgents=3/StartAgents=0/' /usr/local/etc/zabbix_agentd.conf"
+#    shell: "sed -i 's/# ServerActive=/ServerActive=192.168.1.40/' /usr/local/etc/zabbix_agentd.conf"
+#    shell: "sed -i 's/Hostname=Zabbix server/Hostname=db1/' /usr/local/etc/zabbix_agentd.conf"
+#    shell: "sed -i 's/# RefreshActiveChecks=120/RefreshActiveChecks=120/' /usr/local/etc/zabbix_agentd.conf"
+

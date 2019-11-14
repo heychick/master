@@ -1,0 +1,70 @@
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.11/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname mysql1
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.22/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname mysql2
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.77/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname maxscale77
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.30/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname nfs30
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.33/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname web33
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.44/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname web44
+
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.55/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname zabbix55
+
+ 10  fdisk  /dev/vdb
+   11  fdisk  /dev/vdc
+   12  lsblk
+   13  yum -y install lvm2
+   14  pvcreate /dev/vdb1 /dev/vdc1
+   15  vgcreate vg0  /dev/vdb1 /dev/vdc1
+   16  lvcreate -L 9.99G -n  lv0 vg0 
+   17  mkfs.xfs /dev/vg0/lv0 
+   18  lskid
+   19  blkid
+   20  ls
+   21  tar -xf mysql-5.7.17.tar 
+   22  yum -y install mysql-community*.rpm
+   23  mount -a
+
+
+
+
+
+
+
+
+
+
+
+
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.51/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname redisA
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.52/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname redisB
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.53/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname redisC
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.54/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname redisD
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.56/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname redisE
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.57/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname redisF
+
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.58/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname mgm
+
+
+
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.66/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname pxcnode66
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.10/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname pxcnode10
+
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.88/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname pxcnode88
+
+
+nmcli con mod eth0 ipv4.method manual ipv4.addresses 192.168.4.99/24 connection.autoconnect yes  ;nmcli con up eth0;hostnamectl set-hostname haproxy99
+

@@ -319,8 +319,10 @@ Taren1.bgsn
 >>>>				   
 			主机型防火墙(自己保护自己) filter表中的INPUT链
 			网络型防火墙(防火墙服务器主机架设在2个网络之间)  使用filter表中的FORWARD链   
->>>		
->>>		
+>>>
+		net.ipv4.ip_forward = 1
+		
+>>>SNAT		
 >>>		
 >>>		
 >>>		

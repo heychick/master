@@ -319,6 +319,11 @@ Taren1.bgsn
 >>>>				   
 			主机型防火墙(自己保护自己) filter表中的INPUT链
 			网络型防火墙(防火墙服务器主机架设在2个网络之间)  使用filter表中的FORWARD链   
+>>>
+		net.ipv4.ip_forward = 1
+		
+>>>SNAT
+		iptables -t nat -A POSTROUTING -s 192.168.4.0/24 -p tcp --dport 80 -j SNAT --to-source  192.168.2.10		
 >>>		
 >>>		
 >>>		
@@ -337,8 +342,11 @@ Taren1.bgsn
 >>>		
 >>>		
 >>>		
->>>		
->>>		
+
+authorized_keys    别人给你的公钥
+id_rsa						自己生成的私钥
+id_rsa.pub				对应生成的公钥
+known_hosts				记录登录过的主机信息
 
 
 

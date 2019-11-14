@@ -1208,10 +1208,10 @@ Day
 >>>>2.创建集群
 			1.1创建集群
 			配置6台redis服务器
-			vim /etc/redis/redis.conf
-				 cluster-enabled yes                  //启用集群功能
-				 cluster-config-file nodes-6379.conf   //存储集群信息文件
-				 cluster-node-timeout 5000						//连接超时时间(毫秒)
+			vim /etc/redis/6379.conf
+				 cluster-enabled yes                  //启用集群功能 815s
+				 cluster-config-file nodes-6379.conf   //存储集群信息文件 823s
+				 cluster-node-timeout 5000						//连接超时时间(毫秒) 829s
 			重启redis服务
 			检查端口,集群通信端口=默认服务端口+10000
 			redis-trib.rb create --replicas 1 192.168.4.51:6351 192.168.4.52:6352  192.168.4.53:6353 192.168.4.54:6354 192.168.4.55:6355 192.168.4.56:6356
