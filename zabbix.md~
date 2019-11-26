@@ -114,7 +114,7 @@
 	  264 # Include=/usr/local/etc/zabbix_agentd.conf.d/   //加载配置文件目录
 		/usr/local/etc/zabbix_agentd.conf.d/test.conf
 			UserParameter=test, wc -l /etc/passwd | awk '{print $1}'
-		killall -9 zabbix_agentd
+		killall zabbix_agentd
 		zabbix_get -s 127.0.0.1 -k test
 		sed -i '264s/#//' /usr/local/etc/zabbix_agentd.conf
 		sed -i '280s/# UnsafeUserParameters=0/UnsafeUserParameters=1/' /usr/local/etc/zabbix_agentd.conf
